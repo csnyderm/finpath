@@ -2,3 +2,4 @@ venv
 __pycache__
 finpath/__pycache__
 finpath/process_data/__pycache__
+data
