@@ -56,21 +56,45 @@ def create_data_file(data_path:str, source:str, logger:Logger) -> bool:
       logger (Logger): The existing logger set up for logging the application.
   
   Returns:
-      bool: Returns true if the file is created successfully.
+      bool: Returns true if the file is created successfully, and False otherwise.
   """
   match source:
     case "Savings":
+      headers = ['savings_name','savings_amount']
       pass
     case "Income":
+      headers = ['source_name','amount','rate','hours','repeating','next_date'] # We will use a list, just so it's cleanly editable if necessary
       pass
     case "Expenses":
+      headers = ['expense_name','amount','repeating','next_date']
       pass
     case "Debts":
+      headers = ['debt_name','amount','repeating','next_date']
       pass
+    case "Receipts":
+      headers = ['store_name', 'amount', 'items_purchased', 'date']
     case _:
-      pass
+      logger.critical("CRITICAL! Error: Unable to match source type.")
+      return False
   
   # Open and create file here
+  logger.info(f"Creating source file: {source}.csv")
+  
+  try:
+    if data_path.endswith('/'):
+      file_path = data_path + source.lower() + '.csv'
+    
+    else:
+      file_path = '/' + data_path + source.lower() + '.csv'
+
+    with open(file_path, 'w') as source_file:
+      source_file.write(','.join(headers))
+  
+  except Exception as e:
+    logger.critical(f"CRITICAL! Error: Unable to write to the source file. Error: {e}")
+    return False
+  
+  return True
 
 
 def load_data(data_path:str, data_sources:list, logger:Logger) -> bool | tuple:
@@ -97,11 +121,25 @@ def load_data(data_path:str, data_sources:list, logger:Logger) -> bool | tuple:
     except FileNotFoundError:
       logger.error(f"Error: {source}.csv was not found at the data path. Creating a file with appropriate headers.")
       # Add create_data_file
+      try:
+        file_success = create_data_file(data_path, source, logger)
+        if not file_success:
+          raise Exception
+      
+      except Exception as e:
+        logger.critical(f"CRITICAL! Something went wrong when creating the file.")
       return False
     
     except pd.errors.EmptyDataError:
       logger.error(f"Error: {source}.csv was found, but it is missing the appropriate headers. Writing appropriate headers to file.")
       # Add create_data_file
+      try:
+        file_success = create_data_file(data_path, source, logger)
+        if not file_success:
+          raise Exception
+      
+      except Exception as e:
+        logger.critical(f"CRITICAL! Something went wrong when creating the file.")
       return False
     
     except Exception as e:
